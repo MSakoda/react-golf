@@ -1,6 +1,7 @@
 "use client";
 
 import StatCard from "@/components/StatCard";
+import Scorecard from "@/components/Scorecard";
 import { useGameStore } from "@/stores/gameStore";
 
 export default function RunCompleteScreen() {
@@ -10,6 +11,8 @@ export default function RunCompleteScreen() {
     bestScore,
     bestPoints,
     runsCompleted,
+    holes,
+    holeScores,
     startRun,
     returnHome,
     shotLog
@@ -50,17 +53,8 @@ export default function RunCompleteScreen() {
           </div>
         </div>
 
-        <aside className="rounded-lg bg-rough p-4 text-white shadow-glow">
-          <h2 className="text-sm font-black uppercase tracking-wide text-white/70">
-            Final notes
-          </h2>
-          <div className="mt-3 space-y-2">
-            {shotLog.map((entry) => (
-              <p key={entry.id} className="rounded-lg bg-white/10 px-3 py-2 text-sm font-semibold">
-                {entry.text}
-              </p>
-            ))}
-          </div>
+        <aside>
+          <Scorecard holes={holes} scores={holeScores} shotLog={shotLog} showTotal />
         </aside>
       </div>
     </section>

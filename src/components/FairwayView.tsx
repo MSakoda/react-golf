@@ -7,10 +7,65 @@ function progressFromDistance(distance: number, holeYards: number) {
   return Math.max(0, Math.min(1, 1 - distance / holeYards));
 }
 
-function pointOnFairway(progress: number) {
-  const start = { x: 9, y: 78 };
-  const control = { x: 47, y: 21 };
-  const cup = { x: 88, y: 24 };
+function getFairwayLayout(par: number) {
+  if (par === 3) {
+    return {
+      start: { x: 18, y: 72 },
+      control: { x: 42, y: 38 },
+      cup: { x: 70, y: 31 },
+      fairway: {
+        left: "14%",
+        top: "22%",
+        width: "64%",
+        height: "66%",
+        clipPath:
+          "polygon(0 82%, 12% 58%, 30% 36%, 52% 20%, 84% 4%, 100% 9%, 92% 42%, 70% 54%, 46% 62%, 20% 78%, 6% 96%)"
+      },
+      green: { x: 70, y: 31, size: 15 },
+      tee: { left: "12%", bottom: "13%" },
+      label: "Short approach"
+    };
+  }
+
+  if (par === 5) {
+    return {
+      start: { x: 6, y: 82 },
+      control: { x: 47, y: 13 },
+      cup: { x: 92, y: 20 },
+      fairway: {
+        left: "3%",
+        top: "9%",
+        width: "94%",
+        height: "84%",
+        clipPath:
+          "polygon(0 88%, 8% 67%, 18% 51%, 31% 23%, 48% 10%, 65% 18%, 82% 6%, 100% 0, 97% 28%, 84% 43%, 64% 49%, 45% 42%, 27% 61%, 12% 91%)"
+      },
+      green: { x: 92, y: 20, size: 17 },
+      tee: { left: "3%", bottom: "9%" },
+      label: "Long fairway"
+    };
+  }
+
+  return {
+    start: { x: 9, y: 78 },
+    control: { x: 47, y: 21 },
+    cup: { x: 88, y: 24 },
+    fairway: {
+      left: "5%",
+      top: "14%",
+      width: "90%",
+      height: "78%",
+      clipPath:
+        "polygon(0 82%, 8% 62%, 21% 45%, 35% 22%, 54% 13%, 75% 12%, 100% 0, 96% 31%, 82% 48%, 61% 56%, 42% 51%, 24% 67%, 9% 91%)"
+    },
+    green: { x: 88, y: 24, size: 16 },
+    tee: { left: "5%", bottom: "12%" },
+    label: "Mid-length fairway"
+  };
+}
+
+function pointOnFairway(progress: number, par: number) {
+  const { start, control, cup } = getFairwayLayout(par);
   const inverse = 1 - progress;
 
   return {
@@ -29,25 +84,28 @@ function pointOnGreen(distance: number) {
 
 export default function FairwayView({
   holeYards,
+  holePar,
   distanceRemaining,
   currentClub,
   shotAnimation,
   onAnimationComplete
 }: {
   holeYards: number;
+  holePar: number;
   distanceRemaining: number;
   currentClub: Club;
   shotAnimation: ShotAnimation | null;
   onAnimationComplete: () => void;
 }) {
   const isPuttingView = currentClub === "Putter" || shotAnimation?.club === "Putter";
+  const fairwayLayout = useMemo(() => getFairwayLayout(holePar), [holePar]);
   const restingProgress = useMemo(
     () => progressFromDistance(distanceRemaining, holeYards),
     [distanceRemaining, holeYards]
   );
   const restingPoint = useMemo(
-    () => (isPuttingView ? pointOnGreen(distanceRemaining) : pointOnFairway(restingProgress)),
-    [distanceRemaining, isPuttingView, restingProgress]
+    () => (isPuttingView ? pointOnGreen(distanceRemaining) : pointOnFairway(restingProgress, holePar)),
+    [distanceRemaining, holePar, isPuttingView, restingProgress]
   );
   const [ballPoint, setBallPoint] = useState(restingPoint);
 
@@ -60,10 +118,16 @@ export default function FairwayView({
     const isPutt = shotAnimation.club === "Putter";
     const from = isPutt
       ? pointOnGreen(shotAnimation.fromDistance)
-      : pointOnFairway(progressFromDistance(shotAnimation.fromDistance, shotAnimation.holeYards));
+      : pointOnFairway(
+          progressFromDistance(shotAnimation.fromDistance, shotAnimation.holeYards),
+          shotAnimation.holePar
+        );
     const to = isPutt
       ? pointOnGreen(shotAnimation.toDistance)
-      : pointOnFairway(progressFromDistance(shotAnimation.toDistance, shotAnimation.holeYards));
+      : pointOnFairway(
+          progressFromDistance(shotAnimation.toDistance, shotAnimation.holeYards),
+          shotAnimation.holePar
+        );
     setBallPoint(from);
 
     const frame = window.requestAnimationFrame(() => setBallPoint(to));
@@ -77,7 +141,7 @@ export default function FairwayView({
 
   return (
     <div className="rounded-lg border border-emerald-900/10 bg-sky/70 p-2 shadow-sm sm:p-4">
-      <div className="relative h-40 overflow-hidden rounded-lg bg-gradient-to-b from-sky to-emerald-100 sm:h-56">
+      <div className="relative h-40 rounded-lg bg-gradient-to-b from-sky to-emerald-100 sm:h-56">
         {isPuttingView ? (
           <>
             <div className="absolute inset-0 bg-fairway" />
@@ -94,17 +158,49 @@ export default function FairwayView({
         ) : (
           <>
             <div
-              className="absolute left-[5%] top-[14%] h-[78%] w-[90%] rounded-[999px] bg-fairway shadow-inner"
+              className="absolute rounded-[999px] bg-fairway shadow-inner"
               style={{
-                clipPath:
-                  "polygon(0 82%, 8% 62%, 21% 45%, 35% 22%, 54% 13%, 75% 12%, 100% 0, 96% 31%, 82% 48%, 61% 56%, 42% 51%, 24% 67%, 9% 91%)"
+                left: fairwayLayout.fairway.left,
+                top: fairwayLayout.fairway.top,
+                width: fairwayLayout.fairway.width,
+                height: fairwayLayout.fairway.height,
+                clipPath: fairwayLayout.fairway.clipPath
               }}
             />
-            <div className="absolute left-[81%] top-[14%] h-16 w-16 rounded-full bg-emerald-600" />
-            <div className="absolute left-[88%] top-[24%] h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-rough shadow-inner" />
-            <div className="absolute left-[88%] top-[7%] h-12 w-1 bg-rough" />
-            <div className="absolute left-[88.5%] top-[7%] h-5 w-7 bg-pin" />
-            <div className="absolute left-[5%] bottom-[12%] h-10 w-16 rounded-lg bg-sand/90" />
+            <div
+              className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-600"
+              style={{
+                left: `${fairwayLayout.green.x}%`,
+                top: `${fairwayLayout.green.y}%`,
+                height: `${fairwayLayout.green.size * 0.25}rem`,
+                width: `${fairwayLayout.green.size * 0.25}rem`
+              }}
+            />
+            <div
+              className="absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-rough shadow-inner"
+              style={{ left: `${fairwayLayout.cup.x}%`, top: `${fairwayLayout.cup.y}%` }}
+            />
+            <div
+              className="absolute h-11 w-1 -translate-y-full bg-rough sm:h-12"
+              style={{
+                left: `${fairwayLayout.cup.x}%`,
+                top: `${fairwayLayout.cup.y}%`
+              }}
+            />
+            <div
+              className="absolute h-4 w-6 -translate-y-full bg-pin sm:h-5 sm:w-7"
+              style={{
+                left: `calc(${fairwayLayout.cup.x}% + 0.125rem)`,
+                top: `calc(${fairwayLayout.cup.y}% - 2.75rem)`
+              }}
+            />
+            <div
+              className="absolute h-10 w-16 rounded-lg bg-sand/90"
+              style={{ left: fairwayLayout.tee.left, bottom: fairwayLayout.tee.bottom }}
+            />
+            <div className="absolute right-3 bottom-3 rounded-lg bg-white/80 px-2 py-1 text-xs font-black text-rough shadow-sm">
+              {fairwayLayout.label}
+            </div>
           </>
         )}
         <div

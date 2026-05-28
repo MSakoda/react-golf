@@ -1,8 +1,10 @@
 "use client";
 
 import StatCard from "@/components/StatCard";
+import ConfirmationDialog from "@/components/ConfirmationDialog";
 import FairwayView from "@/components/FairwayView";
 import SwingMeter from "@/components/SwingMeter";
+import Scorecard from "@/components/Scorecard";
 import { getClub } from "@/lib/game/utils";
 import { useGameStore } from "@/stores/gameStore";
 
@@ -45,6 +47,7 @@ export default function HoleScreen() {
 
         <FairwayView
           holeYards={hole.yards}
+          holePar={hole.par}
           distanceRemaining={state.distanceRemaining}
           currentClub={club}
           shotAnimation={state.shotAnimation}
@@ -53,7 +56,7 @@ export default function HoleScreen() {
 
         <SwingMeter
           onSwing={state.takeShot}
-          disabled={state.isShotAnimating}
+          disabled={state.isShotAnimating || Boolean(state.confirmation)}
           actionLabel={club === "Putter" ? "Putt" : "Swing"}
         />
 
@@ -81,17 +84,12 @@ export default function HoleScreen() {
           <StatCard label="Total strokes" value={state.totalStrokes} tone="dark" />
           <StatCard label="Total points" value={state.totalPoints} tone="dark" />
         </div>
-        <div className="rounded-lg bg-rough p-4 text-white shadow-glow">
-          <h2 className="text-sm font-black uppercase tracking-wide text-white/70">Shot log</h2>
-          <div className="mt-3 space-y-2">
-            {state.shotLog.map((entry) => (
-              <p key={entry.id} className="rounded-lg bg-white/10 px-3 py-2 text-sm font-semibold">
-                {entry.text}
-              </p>
-            ))}
-          </div>
-        </div>
+        <Scorecard holes={state.holes} scores={state.holeScores} shotLog={state.shotLog} />
       </aside>
+      <ConfirmationDialog
+        confirmation={state.confirmation}
+        onConfirm={state.acknowledgeConfirmation}
+      />
     </section>
   );
 }
