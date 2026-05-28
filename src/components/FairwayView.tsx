@@ -76,8 +76,8 @@ export default function FairwayView({
   }, [onAnimationComplete, restingPoint, shotAnimation]);
 
   return (
-    <div className="rounded-lg border border-emerald-900/10 bg-sky/70 p-4 shadow-sm">
-      <div className="relative h-56 overflow-hidden rounded-lg bg-gradient-to-b from-sky to-emerald-100">
+    <div className="rounded-lg border border-emerald-900/10 bg-sky/70 p-2 shadow-sm sm:p-4">
+      <div className="relative h-40 overflow-hidden rounded-lg bg-gradient-to-b from-sky to-emerald-100 sm:h-56">
         {isPuttingView ? (
           <>
             <div className="absolute inset-0 bg-fairway" />
@@ -87,7 +87,7 @@ export default function FairwayView({
             <div className="absolute left-[82%] top-[56%] h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full bg-rough shadow-inner" />
             <div className="absolute left-[82%] top-[26%] h-[30%] w-1 bg-rough" />
             <div className="absolute left-[82.5%] top-[25%] h-6 w-8 bg-pin" />
-            <div className="absolute left-4 top-4 rounded-lg bg-white/85 px-3 py-2 text-sm font-black text-rough shadow-sm">
+            <div className="absolute left-3 top-3 rounded-lg bg-white/85 px-2 py-1 text-xs font-black text-rough shadow-sm sm:left-4 sm:top-4 sm:px-3 sm:py-2 sm:text-sm">
               Putting green
             </div>
           </>
@@ -116,7 +116,7 @@ export default function FairwayView({
           }}
         />
         {shotAnimation && (
-          <div className="absolute left-4 top-4 rounded-lg bg-white/85 px-3 py-2 text-sm font-black text-rough shadow-sm">
+          <div className="absolute left-3 top-3 rounded-lg bg-white/85 px-2 py-1 text-xs font-black text-rough shadow-sm sm:left-4 sm:top-4 sm:px-3 sm:py-2 sm:text-sm">
             {shotAnimation.quality} {shotAnimation.club}
           </div>
         )}
