@@ -15,11 +15,27 @@ export default function SwingMeter({
   const [flash, setFlash] = useState(false);
   const direction = useRef(1);
   const positionRef = useRef(0.5);
+  const disabledRef = useRef(disabled);
+  const pausedRef = useRef(false);
   const lastTime = useRef<number | null>(null);
+
+  useEffect(() => {
+    disabledRef.current = disabled;
+    if (!disabled) {
+      pausedRef.current = false;
+      lastTime.current = null;
+    }
+  }, [disabled]);
 
   useEffect(() => {
     let frame = 0;
     const tick = (time: number) => {
+      if (pausedRef.current || disabledRef.current) {
+        lastTime.current = time;
+        frame = requestAnimationFrame(tick);
+        return;
+      }
+
       const previous = lastTime.current ?? time;
       const delta = Math.min((time - previous) / 1000, 0.04);
       lastTime.current = time;
@@ -53,6 +69,7 @@ export default function SwingMeter({
 
   function handleSwing() {
     if (disabled) return;
+    pausedRef.current = true;
     setFlash(true);
     window.setTimeout(() => setFlash(false), 170);
     onSwing(positionRef.current);
