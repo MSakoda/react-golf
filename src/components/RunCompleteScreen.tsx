@@ -8,9 +8,10 @@ export default function RunCompleteScreen() {
   const {
     totalStrokes,
     totalPoints,
-    bestScore,
+    bestScores,
     bestPoints,
     runsCompleted,
+    roundLength,
     holes,
     holeScores,
     startRun,
@@ -32,8 +33,8 @@ export default function RunCompleteScreen() {
             <StatCard label="Total strokes" value={totalStrokes} tone="dark" />
             <StatCard label="Total points" value={totalPoints} tone="dark" />
             <StatCard label="Runs completed" value={runsCompleted} />
-            <StatCard label="Best strokes" value={bestScore ?? "None"} />
-            <StatCard label="Best points" value={bestPoints} />
+            <StatCard label={`${roundLength}-hole best`} value={bestScores[roundLength] ?? "None"} />
+            <StatCard label="Best points" value={bestPoints[roundLength]} />
           </div>
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
             <button

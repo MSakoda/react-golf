@@ -1,18 +1,34 @@
 import {
-  BASE_HOLES,
   BASE_THRESHOLDS,
   CLUB_DISTANCES,
+  HOLE_YARD_RANGES,
   QUALITY_MULTIPLIERS,
   SHOT_POINTS,
   UPGRADES
 } from "./constants";
-import type { Club, Hole, ShotQuality, Upgrade } from "./types";
+import type { Club, Hole, RoundLength, ShotQuality, Upgrade } from "./types";
 
-export function createRunHoles(): Hole[] {
-  return BASE_HOLES.map((hole) => ({
+function randomInt(min: number, max: number) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function shuffle<T>(items: T[]) {
+  return [...items].sort(() => Math.random() - 0.5);
+}
+
+export function createRunHoles(roundLength: RoundLength): Hole[] {
+  const holesPerPar = roundLength / 3;
+  const generatedHoles = ([3, 4, 5] as const).flatMap((par) =>
+    Array.from({ length: holesPerPar }, () => ({
+      par,
+      yards: randomInt(HOLE_YARD_RANGES[par].min, HOLE_YARD_RANGES[par].max),
+      modifier: Math.random() < 0.35 ? "Windy" as const : undefined
+    }))
+  );
+
+  return shuffle(generatedHoles).map((hole, index) => ({
     ...hole,
-    modifier:
-      hole.number > 1 && Math.random() < 0.5 ? "Windy" : undefined
+    number: index + 1
   }));
 }
 
@@ -65,7 +81,8 @@ export function getAvailableUpgradeChoices(activeUpgrades: Upgrade[]): Upgrade[]
 
 export function getHoleFinishPoints(strokes: number, par: number) {
   const relation = strokes - par;
-  if (relation <= -2) return { label: "Eagle or better", points: 800 };
+  if (relation <= -3) return { label: "Albatross",points: 1000 };
+  if (relation === -2) return { label: "Eagle", points: 800 };
   if (relation === -1) return { label: "Birdie", points: 500 };
   if (relation === 0) return { label: "Par", points: 250 };
   if (relation === 1) return { label: "Bogey", points: 100 };

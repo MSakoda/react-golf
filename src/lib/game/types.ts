@@ -4,6 +4,10 @@ export type Club = "Driver" | "Iron" | "Wedge" | "Putter";
 
 export type ShotQuality = "Perfect" | "Good" | "Okay" | "Bad";
 
+export type RoundLength = 3 | 6 | 9;
+
+export type RoundLengthRecords<T> = Record<RoundLength, T>;
+
 export interface Hole {
   number: number;
   par: number;
@@ -63,6 +67,7 @@ export interface LeaderboardEntry {
   playerName: string;
   strokes: number;
   points: number;
+  roundLength: RoundLength;
   date: string;
 }
 
@@ -83,8 +88,10 @@ export interface GameState {
   shotLog: ShotLogEntry[];
   holeScores: HoleScore[];
   upgradeChoices: Upgrade[];
-  bestScore: number | null;
-  bestPoints: number;
+  roundLength: RoundLength;
+  leaderboardRoundLength: RoundLength;
+  bestScores: RoundLengthRecords<number | null>;
+  bestPoints: RoundLengthRecords<number>;
   runsCompleted: number;
   playerName: string;
   leaderboard: LeaderboardEntry[];

@@ -1,4 +1,4 @@
-import type { Club, ShotQuality, Upgrade } from "./types";
+import type { Club, RoundLength, RoundLengthRecords, ShotQuality, Upgrade } from "./types";
 
 export const STORAGE_KEYS = {
   bestScore: "rogue-links-best-score",
@@ -8,11 +8,27 @@ export const STORAGE_KEYS = {
   leaderboard: "rogue-links-leaderboard"
 } as const;
 
-export const BASE_HOLES = [
-  { number: 1, par: 3, yards: 145 },
-  { number: 2, par: 4, yards: 325 },
-  { number: 3, par: 5, yards: 480 }
-] as const;
+export const ROUND_LENGTHS = [3, 6, 9] as const satisfies readonly RoundLength[];
+
+export const DEFAULT_ROUND_LENGTH: RoundLength = 3;
+
+export const EMPTY_BEST_SCORES: RoundLengthRecords<number | null> = {
+  3: null,
+  6: null,
+  9: null
+};
+
+export const EMPTY_BEST_POINTS: RoundLengthRecords<number> = {
+  3: 0,
+  6: 0,
+  9: 0
+};
+
+export const HOLE_YARD_RANGES = {
+  3: { min: 110, max: 190 },
+  4: { min: 280, max: 420 },
+  5: { min: 440, max: 580 }
+} as const;
 
 export const CLUB_DISTANCES: Record<Club, number> = {
   Driver: 220,

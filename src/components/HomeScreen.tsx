@@ -2,19 +2,27 @@
 
 import { useEffect } from "react";
 import StatCard from "@/components/StatCard";
+import { ROUND_LENGTHS } from "@/lib/game/constants";
 import { useGameStore } from "@/stores/gameStore";
 
 export default function HomeScreen() {
   const {
-    bestScore,
+    bestScores,
     bestPoints,
     runsCompleted,
     playerName,
     leaderboard,
+    roundLength,
+    leaderboardRoundLength,
     hydrateRecords,
+    setRoundLength,
+    setLeaderboardRoundLength,
     setPlayerName,
     startRun
   } = useGameStore();
+  const filteredLeaderboard = leaderboard.filter(
+    (entry) => entry.roundLength === leaderboardRoundLength
+  ).slice(0, 10);
 
   useEffect(() => {
     hydrateRecords();
@@ -31,9 +39,30 @@ export default function HomeScreen() {
             Practice Round
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-emerald-950/70 sm:text-lg">
-            A three-hole timing run where clean swings, clever upgrades, and a little course
+            A timing run where clean swings, clever upgrades, and a little course
             management turn into a portfolio-ready roguelike golf loop.
           </p>
+          <div className="mt-6">
+            <p className="text-xs font-black uppercase tracking-wide text-emerald-950/60">
+              Round length
+            </p>
+            <div className="mt-2 grid grid-cols-3 gap-2 rounded-lg bg-emerald-950/10 p-1">
+              {ROUND_LENGTHS.map((length) => (
+                <button
+                  key={length}
+                  type="button"
+                  onClick={() => setRoundLength(length)}
+                  className={`rounded-md px-3 py-2 text-sm font-black uppercase tracking-wide transition focus:outline-none focus:ring-4 focus:ring-emerald-300 ${
+                    roundLength === length
+                      ? "bg-rough text-white shadow-sm"
+                      : "bg-transparent text-rough hover:bg-white/60"
+                  }`}
+                >
+                  {length} Holes
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="mt-7 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
             <label className="block">
               <span className="text-xs font-black uppercase tracking-wide text-emerald-950/60">
@@ -59,21 +88,43 @@ export default function HomeScreen() {
 
         <div className="space-y-3">
           <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-            <StatCard label="Best strokes" value={bestScore ?? "None"} tone="dark" />
-            <StatCard label="Best points" value={bestPoints} />
+            <StatCard
+              label={`${leaderboardRoundLength}-hole best`}
+              value={bestScores[leaderboardRoundLength] ?? "None"}
+              tone="dark"
+            />
+            <StatCard label="Best points" value={bestPoints[leaderboardRoundLength]} />
             <StatCard label="Runs completed" value={runsCompleted} />
           </div>
           <div className="rounded-lg bg-rough p-4 text-white shadow-glow">
-            <h2 className="text-sm font-black uppercase tracking-wide text-white/70">
-              Leaderboard
-            </h2>
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-sm font-black uppercase tracking-wide text-white/70">
+                Leaderboard
+              </h2>
+              <div className="grid grid-cols-3 rounded-lg bg-white/10 p-1">
+                {ROUND_LENGTHS.map((length) => (
+                  <button
+                    key={length}
+                    type="button"
+                    onClick={() => setLeaderboardRoundLength(length)}
+                    className={`rounded-md px-2 py-1 text-xs font-black transition focus:outline-none focus:ring-2 focus:ring-emerald-300 ${
+                      leaderboardRoundLength === length
+                        ? "bg-white text-rough"
+                        : "text-white/70 hover:bg-white/10"
+                    }`}
+                  >
+                    {length}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="mt-3 space-y-2">
-              {leaderboard.length === 0 ? (
+              {filteredLeaderboard.length === 0 ? (
                 <p className="rounded-lg bg-white/10 px-3 py-3 text-sm font-semibold text-white/75">
                   No completed rounds yet
                 </p>
               ) : (
-                leaderboard.map((entry, index) => (
+                filteredLeaderboard.map((entry, index) => (
                   <div
                     key={entry.id}
                     className="grid grid-cols-[2rem_1fr_auto] items-center gap-2 rounded-lg bg-white/10 px-3 py-2 text-sm"
