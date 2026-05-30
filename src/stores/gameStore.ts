@@ -1,6 +1,18 @@
 import { create } from "zustand";
-import { STORAGE_KEYS } from "@/lib/game/constants";
-import type { GameState, LeaderboardEntry, ShotLogEntry, Upgrade } from "@/lib/game/types";
+import { DEFAULT_ROUND_LENGTH, EMPTY_BEST_POINTS, EMPTY_BEST_SCORES, STORAGE_KEYS } from "@/lib/game/constants";
+import { createLogEntry } from "@/lib/game/logging";
+import {
+  readLeaderboard,
+  readBestPoints,
+  readBestScores,
+  readNumber,
+  readString,
+  savePlayerName,
+  saveRunRecords,
+  sortLeaderboard
+} from "@/lib/game/records";
+import { getFinishName } from "@/lib/game/scoring";
+import type { GameState, RoundLength, Upgrade } from "@/lib/game/types";
 import {
   createRunHoles,
   getAvailableUpgradeChoices,
@@ -12,6 +24,8 @@ import {
 
 interface GameActions {
   hydrateRecords: () => void;
+  setRoundLength: (roundLength: RoundLength) => void;
+  setLeaderboardRoundLength: (roundLength: RoundLength) => void;
   setPlayerName: (playerName: string) => void;
   startRun: () => void;
   takeShot: (markerPosition: number) => void;
@@ -38,86 +52,46 @@ const initialState: GameState = {
   shotLog: [],
   holeScores: [],
   upgradeChoices: [],
-  bestScore: null,
-  bestPoints: 0,
+  roundLength: DEFAULT_ROUND_LENGTH,
+  leaderboardRoundLength: DEFAULT_ROUND_LENGTH,
+  bestScores: EMPTY_BEST_SCORES,
+  bestPoints: EMPTY_BEST_POINTS,
   runsCompleted: 0,
   playerName: "",
   leaderboard: []
 };
 
-function logEntry(text: string): ShotLogEntry {
-  return { id: `${Date.now()}-${Math.random()}`, text };
-}
-
-function readNumber(key: string, fallback: number): number {
-  if (typeof window === "undefined") return fallback;
-  const value = window.localStorage.getItem(key);
-  return value === null ? fallback : Number(value);
-}
-
-function readString(key: string, fallback: string): string {
-  if (typeof window === "undefined") return fallback;
-  return window.localStorage.getItem(key) ?? fallback;
-}
-
-function readLeaderboard(): LeaderboardEntry[] {
-  if (typeof window === "undefined") return [];
-  const value = window.localStorage.getItem(STORAGE_KEYS.leaderboard);
-  if (!value) return [];
-
-  try {
-    const parsed = JSON.parse(value);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-function sortLeaderboard(entries: LeaderboardEntry[]) {
-  return [...entries]
-    .sort((a, b) => a.strokes - b.strokes || b.points - a.points)
-    .slice(0, 10);
-}
-
-function getFinishName(strokes: number, par: number) {
-  const relation = strokes - par;
-  if (strokes === 1) return "Hole in one";
-  if (relation <= -2) return "Eagle";
-  if (relation === -1) return "Birdie";
-  if (relation === 0) return "Par";
-  if (relation === 1) return "Bogey";
-  if (relation === 2) return "Double bogey";
-  return "Triple bogey or worse";
-}
-
 export const useGameStore = create<GameState & GameActions>((set, get) => ({
   ...initialState,
 
   hydrateRecords: () => {
-    const savedBestScore = readNumber(STORAGE_KEYS.bestScore, 0);
     set({
-      bestScore: savedBestScore > 0 ? savedBestScore : null,
-      bestPoints: readNumber(STORAGE_KEYS.bestPoints, 0),
+      bestScores: readBestScores(),
+      bestPoints: readBestPoints(),
       runsCompleted: readNumber(STORAGE_KEYS.runsCompleted, 0),
       playerName: readString(STORAGE_KEYS.playerName, ""),
       leaderboard: sortLeaderboard(readLeaderboard())
     });
   },
 
+  setRoundLength: (roundLength: RoundLength) => {
+    set({ roundLength });
+  },
+
+  setLeaderboardRoundLength: (roundLength: RoundLength) => {
+    set({ leaderboardRoundLength: roundLength });
+  },
+
   setPlayerName: (playerName: string) => {
     const cleanName = playerName.slice(0, 24);
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(STORAGE_KEYS.playerName, cleanName);
-    }
+    savePlayerName(cleanName);
     set({ playerName: cleanName });
   },
 
   startRun: () => {
     const playerName = get().playerName.trim() || "Player";
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(STORAGE_KEYS.playerName, playerName);
-    }
-    const holes = createRunHoles();
+    savePlayerName(playerName);
+    const holes = createRunHoles(get().roundLength);
     set({
       currentScreen: "playing",
       currentHoleIndex: 0,
@@ -133,7 +107,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       pendingShotResult: null,
       confirmation: null,
       playerName,
-      shotLog: [logEntry("Practice round started. Hole 1 awaits.")],
+      shotLog: [createLogEntry("Practice round started. Hole 1 awaits.")],
       holeScores: [],
       upgradeChoices: []
     });
@@ -162,7 +136,11 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       club === "Putter"
         ? `${result.quality} putt: ${result.nextDistance === 0 ? "holed" : `${result.nextDistance} yards left`}`
         : `${result.quality} ${club}: ${result.shotDistance} yards`;
-    const nextLog = [...result.log.map(logEntry), logEntry(shotText), ...state.shotLog].slice(0, 8);
+    const nextLog = [
+      ...result.log.map(createLogEntry),
+      createLogEntry(shotText),
+      ...state.shotLog
+    ].slice(0, 8);
     const totalPoints = state.totalPoints + result.points;
 
     set({
@@ -206,7 +184,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
             ? pending.nextDistance === 0
               ? `That was a ${pending.quality.toLowerCase()} putt, and it dropped.`
               : `That was a ${pending.quality.toLowerCase()} putt that left ${pending.nextDistance} yards.`
-            : `That was a ${pending.quality.toLowerCase()} swing. You hit it ${pending.shotDistance} yards with ${pending.club}.`,
+            : `That was a ${pending.quality.toLowerCase()} swing. You hit it ${pending.shotDistance} yards with your ${pending.club}.`,
         actionLabel: pending.nextDistance === 0 ? "See hole result" : "Next shot"
       }
     });
@@ -248,7 +226,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
 
     const finish = getHoleFinishPoints(pending.strokesThisHole, hole.par);
     const finishedLog = [
-      logEntry(`Finished Hole ${hole.number} with ${finish.label}.`),
+      createLogEntry(`Finished Hole ${hole.number} with ${finish.label}.`),
       ...pending.shotLog
     ].slice(0, 8);
     const isFinalHole = state.currentHoleIndex === state.holes.length - 1;
@@ -263,12 +241,19 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     ].sort((a, b) => a.holeNumber - b.holeNumber);
 
     if (isFinalHole) {
-      const currentBestScore = state.bestScore;
+      const currentBestScore = state.bestScores[state.roundLength];
       const bestScore =
         currentBestScore === null
           ? pending.totalStrokes
           : Math.min(currentBestScore, pending.totalStrokes);
-      const bestPoints = Math.max(state.bestPoints, finalPoints);
+      const bestScores = {
+        ...state.bestScores,
+        [state.roundLength]: bestScore
+      };
+      const bestPoints = {
+        ...state.bestPoints,
+        [state.roundLength]: Math.max(state.bestPoints[state.roundLength], finalPoints)
+      };
       const runsCompleted = state.runsCompleted + 1;
       const leaderboard = sortLeaderboard([
         ...state.leaderboard,
@@ -277,15 +262,11 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
           playerName: state.playerName.trim() || "Player",
           strokes: pending.totalStrokes,
           points: finalPoints,
+          roundLength: state.roundLength,
           date: new Date().toISOString()
         }
       ]);
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem(STORAGE_KEYS.bestScore, String(bestScore));
-        window.localStorage.setItem(STORAGE_KEYS.bestPoints, String(bestPoints));
-        window.localStorage.setItem(STORAGE_KEYS.runsCompleted, String(runsCompleted));
-        window.localStorage.setItem(STORAGE_KEYS.leaderboard, JSON.stringify(leaderboard));
-      }
+      saveRunRecords({ bestScores, bestPoints, runsCompleted, leaderboard });
       set({
         currentScreen: "complete",
         confirmation: null,
@@ -296,7 +277,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
         totalPoints: finalPoints,
         shotLog: finishedLog,
         holeScores,
-        bestScore,
+        bestScores,
         bestPoints,
         runsCompleted,
         leaderboard
@@ -337,7 +318,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       confirmation: null,
       upgradeChoices: [],
       shotLog: [
-        logEntry(`${upgrade.name} added. Hole ${nextHole.number} is up.`),
+        createLogEntry(`${upgrade.name} added. Hole ${nextHole.number} is up.`),
         ...state.shotLog
       ].slice(0, 8)
     });
@@ -346,10 +327,12 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
   returnHome: () =>
     set({
       ...initialState,
-      bestScore: get().bestScore,
+      bestScores: get().bestScores,
       bestPoints: get().bestPoints,
       runsCompleted: get().runsCompleted,
       playerName: get().playerName,
-      leaderboard: get().leaderboard
+      leaderboard: get().leaderboard,
+      roundLength: get().roundLength,
+      leaderboardRoundLength: get().leaderboardRoundLength
     })
 }));

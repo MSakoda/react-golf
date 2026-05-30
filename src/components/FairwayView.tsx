@@ -147,7 +147,6 @@ export default function FairwayView({
             <div className="absolute inset-0 bg-fairway" />
             <div className="absolute left-[5%] top-[10%] h-[80%] w-[90%] rounded-[999px] bg-emerald-500/40" />
             <div className="absolute left-[70%] top-[34%] h-24 w-24 rounded-full bg-emerald-600/45" />
-            <div className="absolute left-[8%] top-1/2 h-1 w-[76%] -translate-y-1/2 rounded-full bg-white/25" />
             <div className="absolute left-[82%] top-[56%] h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full bg-rough shadow-inner" />
             <div className="absolute left-[82%] top-[26%] h-[30%] w-1 bg-rough" />
             <div className="absolute left-[82.5%] top-[25%] h-6 w-8 bg-pin" />

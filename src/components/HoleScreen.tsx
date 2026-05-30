@@ -12,6 +12,18 @@ export default function HoleScreen() {
   const state = useGameStore();
   const hole = state.holes[state.currentHoleIndex];
   const club = getClub(state.distanceRemaining);
+  const activeUpgradeGroups = state.activeUpgrades.reduce(
+    (groups, upgrade) => {
+      const group = groups.find((item) => item.upgrade.id === upgrade.id);
+      if (group) {
+        group.count += 1;
+        return groups;
+      }
+
+      return [...groups, { upgrade, count: 1 }];
+    },
+    [] as Array<{ upgrade: (typeof state.activeUpgrades)[number]; count: number }>
+  );
 
   if (!hole) return null;
 
@@ -22,7 +34,7 @@ export default function HoleScreen() {
           <div className="flex items-start justify-between gap-2 sm:flex-wrap sm:gap-3">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.16em] text-fairway sm:text-sm">
-                Hole {hole.number} of 3
+                Hole {hole.number} of {state.holes.length}
               </p>
               <h1 className="mt-0.5 text-2xl font-black leading-tight text-rough sm:mt-1 sm:text-5xl">
                 {Math.round(state.distanceRemaining)} yards left
@@ -66,12 +78,17 @@ export default function HoleScreen() {
             {state.activeUpgrades.length === 0 ? (
               <span className="text-sm font-semibold text-emerald-950/55">No upgrades yet</span>
             ) : (
-              state.activeUpgrades.map((upgrade, index) => (
+              activeUpgradeGroups.map(({ upgrade, count }) => (
                 <span
-                  key={`${upgrade.id}-${index}`}
-                  className="rounded-lg bg-emerald-100 px-3 py-2 text-sm font-bold text-rough"
+                  key={upgrade.id}
+                  className="inline-flex items-center gap-2 rounded-lg bg-emerald-100 px-3 py-2 text-sm font-bold text-rough"
                 >
                   {upgrade.name}
+                  {upgrade.stackable && count > 1 && (
+                    <span className="rounded-md bg-rough px-1.5 py-0.5 text-xs font-black text-white">
+                      x{count}
+                    </span>
+                  )}
                 </span>
               ))
             )}
