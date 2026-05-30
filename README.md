@@ -4,6 +4,24 @@ A browser-based roguelike golf timing game built with Next.js, React, TypeScript
 
 Rogue Links turns a simple swing-meter mechanic into a replayable golf loop: players choose a round length, play randomized balanced courses, earn upgrades between holes, and compete against per-format leaderboards.
 
+## Playable Demo
+
+[Play Rogue Links](https://msakoda.github.io/react-golf/)
+
+## Screenshots
+
+### Home Screen
+
+![Rogue Links home screen](src/app/Home-page.png)
+
+### Gameplay
+
+![Rogue Links gameplay screen](src/app/Game-screen.png)
+
+### Upgrade Selection
+
+![Rogue Links upgrade selection screen](src/app/Upgrade-screen.png)
+
 ## Project Impact
 
 - Built a complete interactive game loop with stateful screens, animation flow, scoring, upgrades, persistence, and replayability.
