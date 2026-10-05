@@ -5,7 +5,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        fairway: "#2f8f5b",
+        fairway: "#267a4e",
         rough: "#123927",
         sand: "#f1d994",
         pin: "#ef4444",

@@ -41,7 +41,7 @@ export default function HoleScreen() {
               </h1>
             </div>
             <div className="shrink-0 rounded-lg bg-sand px-3 py-2 text-right shadow-sm sm:px-4 sm:py-3">
-              <p className="text-[0.65rem] font-black uppercase leading-none text-emerald-950/60 sm:text-xs">
+              <p className="text-[0.65rem] font-black uppercase leading-none text-emerald-950/80 sm:text-xs">
                 Modifier
               </p>
               <p className="mt-0.5 text-sm font-black text-rough sm:text-lg">
